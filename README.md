@@ -34,3 +34,4 @@
   `make undeploy`
   
   Cleanup from OLM: `operator-sdk cleanup dbaas-operator`
+test
