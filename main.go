@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"os"
+
 	customMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
