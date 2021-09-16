@@ -102,6 +102,8 @@ func (r *DBaaSInventoryReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 		logger.V(1).Info("Found DBaaS Provider", "DBaaS Provider", inventory.Spec.ProviderRef)
 
+		execution := NewExecution(provider.Spec.Provider.Name, inventory.Kind, inventory.Name, "list_inventories")
+
 		providerInventory := r.createProviderObject(&inventory, provider.Spec.InventoryKind)
 		if result, err := r.reconcileProviderObject(providerInventory, r.providerObjectMutateFn(&inventory, providerInventory, inventory.Spec.DeepCopy()), ctx); err != nil {
 			if errors.IsConflict(err) {
@@ -109,6 +111,7 @@ func (r *DBaaSInventoryReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				return ctrl.Result{Requeue: true}, nil
 			}
 			logger.Error(err, "Error reconciling the Provider Inventory resource")
+			execution.Finish(err)
 			return ctrl.Result{}, err
 		} else {
 			logger.V(1).Info("Provider Inventory resource reconciled", "result", result)
@@ -117,6 +120,7 @@ func (r *DBaaSInventoryReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		var DBaaSProviderInventory v1alpha1.DBaaSProviderInventory
 		if err := r.parseProviderObject(providerInventory, &DBaaSProviderInventory); err != nil {
 			logger.Error(err, "Error parsing the Provider Inventory resource")
+			execution.Finish(err)
 			return ctrl.Result{}, err
 		}
 		if err := r.reconcileDBaaSObjectStatus(&inventory, func() error {
@@ -128,9 +132,12 @@ func (r *DBaaSInventoryReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 				return ctrl.Result{Requeue: true}, nil
 			}
 			logger.Error(err, "Error updating the DBaaS Inventory status")
+			execution.Finish(err)
 			return ctrl.Result{}, err
 		} else {
+			execution.Finish(err)
 			logger.V(1).Info("DBaaS Inventory status updated")
+
 		}
 	}
 

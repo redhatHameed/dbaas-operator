@@ -19,22 +19,22 @@ package main
 import (
 	"flag"
 	"os"
+	customMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	consolev1alpha1 "github.com/openshift/api/console/v1alpha1"
+	operatorv1 "github.com/openshift/api/operator/v1"
+	coreosv1 "github.com/operator-framework/api/pkg/operators/v1"
+	operatorframwork "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	consolev1alpha1 "github.com/openshift/api/console/v1alpha1"
-	operatorv1 "github.com/openshift/api/operator/v1"
-	coreosv1 "github.com/operator-framework/api/pkg/operators/v1"
-	operatorframwork "github.com/operator-framework/api/pkg/operators/v1alpha1"
 
 	"github.com/RHEcosystemAppEng/dbaas-operator/api/v1alpha1"
 	"github.com/RHEcosystemAppEng/dbaas-operator/controllers"
@@ -47,8 +47,11 @@ var (
 )
 
 func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
+	// Register custom metrics with the global prometheus registry
+	customMetrics.Registry.MustRegister(controllers.PlatformStatus)
+	customMetrics.Registry.MustRegister(controllers.DBaasRequestHistogram)
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))
 	utilruntime.Must(operatorframwork.AddToScheme(scheme))
 	utilruntime.Must(coreosv1.AddToScheme(scheme))

@@ -89,12 +89,15 @@ func (r *DBaaSConnectionReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 	logger.Info("Found DBaaS Provider", "DBaaS Provider", inventory.Spec.ProviderRef)
 
+	execution := NewExecution(provider.Spec.Provider.Name, connection.Kind, connection.Name, "get_connection")
+
 	providerConnection := r.createProviderObject(&connection, provider.Spec.ConnectionKind)
 	if result, err := r.reconcileProviderObject(providerConnection, r.providerObjectMutateFn(&connection, providerConnection, connection.Spec.DeepCopy()), ctx); err != nil {
 		if errors.IsConflict(err) {
 			logger.Info("Provider Connection modified, retry syncing spec")
 			return ctrl.Result{Requeue: true}, nil
 		}
+		execution.Finish(err)
 		logger.Error(err, "Error reconciling Provider Connection resource")
 		return ctrl.Result{}, err
 	} else {
@@ -104,6 +107,7 @@ func (r *DBaaSConnectionReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	var DBaaSProviderConnection v1alpha1.DBaaSProviderConnection
 	if err := r.parseProviderObject(providerConnection, &DBaaSProviderConnection); err != nil {
 		logger.Error(err, "Error parsing the Provider Connection resource")
+		execution.Finish(err)
 		return ctrl.Result{}, err
 	}
 	if err := r.reconcileDBaaSObjectStatus(&connection, func() error {
@@ -114,9 +118,11 @@ func (r *DBaaSConnectionReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 			logger.Info("DBaaS Connection modified, retry syncing status")
 			return ctrl.Result{Requeue: true}, nil
 		}
+		execution.Finish(err)
 		logger.Error(err, "Error updating the DBaaS Connection status")
 		return ctrl.Result{}, err
 	} else {
+		execution.Finish(err)
 		logger.Info("DBaaS Connection status updated")
 	}
 
