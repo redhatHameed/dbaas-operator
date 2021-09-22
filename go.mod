@@ -8,6 +8,7 @@ require (
 	github.com/onsi/gomega v1.13.0
 	github.com/openshift/api v0.0.0-20210729103544-e4a0474d1519
 	github.com/operator-framework/api v0.10.5
+	github.com/prometheus/client_golang v1.11.0
 	k8s.io/api v0.21.1
 	k8s.io/apimachinery v0.21.1
 	k8s.io/client-go v0.21.1

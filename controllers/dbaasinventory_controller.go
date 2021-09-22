@@ -19,13 +19,15 @@ package controllers
 import (
 	"context"
 
-	"github.com/RHEcosystemAppEng/dbaas-operator/api/v1alpha1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+
+	"github.com/RHEcosystemAppEng/dbaas-operator/api/v1alpha1"
+	"github.com/RHEcosystemAppEng/dbaas-operator/metrics"
 )
 
 // DBaaSInventoryReconciler reconciles a DBaaSInventory object
@@ -102,7 +104,9 @@ func (r *DBaaSInventoryReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		}
 		logger.V(1).Info("Found DBaaS Provider", "DBaaS Provider", inventory.Spec.ProviderRef)
 
-		execution := NewExecution(provider.Spec.Provider.Name, inventory.Kind, inventory.Name, "list_inventories")
+		providerName := provider.Spec.Provider.Name
+
+		execution := metrics.NewExecution(provider.Spec.Provider.Name, inventory.Kind, inventory.Name, "list_inventories")
 
 		providerInventory := r.createProviderObject(&inventory, provider.Spec.InventoryKind)
 		if result, err := r.reconcileProviderObject(providerInventory, r.providerObjectMutateFn(&inventory, providerInventory, inventory.Spec.DeepCopy()), ctx); err != nil {
