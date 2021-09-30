@@ -27,7 +27,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 
 	"github.com/RHEcosystemAppEng/dbaas-operator/api/v1alpha1"
-	"github.com/RHEcosystemAppEng/dbaas-operator/metrics"
+	"github.com/RHEcosystemAppEng/dbaas-operator/controllers/metrics"
+	"github.com/prometheus/client_golang/prometheus"
+)
+
+const (
+	InventoryReadyType string = "SpecSynced"
 )
 
 // DBaaSInventoryReconciler reconciles a DBaaSInventory object
@@ -140,6 +145,7 @@ func (r *DBaaSInventoryReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 			return ctrl.Result{}, err
 		} else {
 			execution.Finish(err)
+			setInventoryMetrics(&inventory, providerName)
 			logger.V(1).Info("DBaaS Inventory status updated")
 
 		}
@@ -210,4 +216,68 @@ func inventoryRbacObjs(inventory v1alpha1.DBaaSInventory, tenantList v1alpha1.DB
 	}
 
 	return role, roleBinding
+}
+
+var inventoryReasonCache metrics.ProviderReasonsCache = metrics.ProviderReasonsCache{}
+
+func setInventoryMetrics(inv *v1alpha1.DBaaSInventory, provider string) {
+	for _, cond := range inv.Status.Conditions {
+		if cond.Type == InventoryReadyType {
+			setMetricsCondInventoryStatus(inv, &cond, provider)
+		} else {
+			// to be implemented for DBaaS Provider specific status condition
+		}
+	}
+}
+
+func setMetricsCondInventoryStatus(inv *v1alpha1.DBaaSInventory, cond *metav1.Condition, provider string) {
+	if cond.Status == metav1.ConditionTrue {
+		setInventoryElapsedTime(inv, cond.LastTransitionTime, provider)
+		setInventoryStatusReady(inv, 1, provider)
+	} else {
+		resetInventoryElapsedTime(inv, provider)
+		setInventoryStatusReady(inv, 0, provider)
+	}
+	setInventoryStatusReason(inv, cond.Reason, provider)
+}
+
+func setInventoryElapsedTime(inv *v1alpha1.DBaaSInventory, lastTransitionTime metav1.Time, provider string) {
+	metrics.InventoryElapsedTime.With(prometheus.Labels{
+		"provider":  provider,
+		"inventory": inv.Name,
+		"namespace": inv.Namespace}).Set(lastTransitionTime.Sub(inv.CreationTimestamp.Time).Seconds())
+}
+
+func resetInventoryElapsedTime(inv *v1alpha1.DBaaSInventory, provider string) {
+	metrics.InventoryElapsedTime.Delete(prometheus.Labels{
+		"provider":  provider,
+		"inventory": inv.Name,
+		"namespace": inv.Namespace})
+}
+
+func setInventoryStatusReady(inventory *v1alpha1.DBaaSInventory, val float64, provider string) {
+	metrics.InventoryStatusReady.With(prometheus.Labels{
+		"provider":  provider,
+		"inventory": inventory.Name,
+		"namespace": inventory.Namespace}).Set(val)
+}
+
+func resetInventoryStatusReasons(inv *v1alpha1.DBaaSInventory, provider string) {
+	for reason := range *inventoryReasonCache.GetProviderReasons(provider) {
+		metrics.InventoryStatusReason.With(prometheus.Labels{
+			"provider":  provider,
+			"inventory": inv.Name,
+			"namespace": inv.Namespace,
+			"reason":    string(reason)}).Set(0)
+	}
+}
+
+func setInventoryStatusReason(inv *v1alpha1.DBaaSInventory, reason, provider string) {
+	inventoryReasonCache.SetProviderReason(provider, reason)
+	resetInventoryStatusReasons(inv, provider)
+	metrics.InventoryStatusReason.With(prometheus.Labels{
+		"provider":  provider,
+		"inventory": inv.Name,
+		"namespace": inv.Namespace,
+		"reason":    reason}).Set(1)
 }

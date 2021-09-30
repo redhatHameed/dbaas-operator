@@ -63,8 +63,6 @@ type DBaaSInventoryList struct {
 func init() {
 	SchemeBuilder.Register(&DBaaSInventory{}, &DBaaSInventoryList{})
 }
-<<<<<<< HEAD
-=======
 
 func SetInventoryMetrics(inv *DBaaSInventory, provider string) {
 	for _, condition := range inv.Status.Conditions {
@@ -119,4 +117,3 @@ func setInventoryStatusReason(inv *DBaaSInventory, reason string) {
 		"namespace": inv.Namespace,
 		"reason":    reason}).Set(1)
 }
->>>>>>> add metrics

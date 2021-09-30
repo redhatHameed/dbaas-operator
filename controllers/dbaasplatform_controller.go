@@ -26,6 +26,7 @@ import (
 	"github.com/RHEcosystemAppEng/dbaas-operator/controllers/reconcilers/mongodb_atlas_instalation"
 	"github.com/RHEcosystemAppEng/dbaas-operator/controllers/reconcilers/servicebinding"
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,6 +41,7 @@ import (
 	"time"
 
 	dbaasv1alpha1 "github.com/RHEcosystemAppEng/dbaas-operator/api/v1alpha1"
+	"github.com/RHEcosystemAppEng/dbaas-operator/controllers/metrics"
 )
 
 const (
@@ -118,7 +120,7 @@ func (r *DBaaSPlatformReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 			if cr.DeletionTimestamp == nil {
 				status, err = reconciler.Reconcile(ctx, cr, nextStatus)
-				SetPlatformStatusMetric(platform, status)
+				setPlatformStatusMetric(platform, status)
 			} else {
 				status, err = reconciler.Cleanup(ctx, cr)
 			}
@@ -306,4 +308,12 @@ func (r *DBaaSPlatformReconciler) updateStatus(cr *dbaasv1alpha1.DBaaSPlatform, 
 		Requeue:      true,
 		RequeueAfter: RequeueDelaySuccess,
 	}, nil
+}
+
+// setPlatformStatus exposes dbaas_platform_status metric for each platform
+func setPlatformStatusMetric(platformName dbaasv1alpha1.PlatformsName, status dbaasv1alpha1.PlatformsInstlnStatus) {
+	//PlatformStatus.Reset()
+	if len(platformName) > 0 {
+		metrics.PlatformStatus.With(prometheus.Labels{"platform": string(platformName), "status": string(status)}).Set(float64(1))
+	}
 }

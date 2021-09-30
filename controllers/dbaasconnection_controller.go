@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 
+	"github.com/prometheus/client_golang/prometheus"
 	appv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -30,6 +31,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"github.com/RHEcosystemAppEng/dbaas-operator/api/v1alpha1"
+	"github.com/RHEcosystemAppEng/dbaas-operator/controllers/metrics"
+)
+
+const (
+	ConnectionReadyType string = "ReadyForBinding"
 )
 
 // DBaaSConnectionReconciler reconciles a DBaaSConnection object
@@ -90,6 +96,7 @@ func (r *DBaaSConnectionReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	logger.Info("Found DBaaS Provider", "DBaaS Provider", inventory.Spec.ProviderRef)
 
 	execution := NewExecution(provider.Spec.Provider.Name, connection.Kind, connection.Name, "get_connection")
+	providerName := provider.Spec.Provider.Name
 
 	providerConnection := r.createProviderObject(&connection, provider.Spec.ConnectionKind)
 	if result, err := r.reconcileProviderObject(providerConnection, r.providerObjectMutateFn(&connection, providerConnection, connection.Spec.DeepCopy()), ctx); err != nil {
@@ -124,6 +131,7 @@ func (r *DBaaSConnectionReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	} else {
 		execution.Finish(err)
 		logger.Info("DBaaS Connection status updated")
+		setConnectionMetrics(&connection, providerName)
 	}
 
 	return ctrl.Result{}, nil
@@ -186,4 +194,68 @@ func (r *DBaaSConnectionReconciler) deploymentMutateFn(connection *v1alpha1.DBaa
 		}
 		return nil
 	}
+}
+
+var connectionReasonCache metrics.ProviderReasonsCache = metrics.ProviderReasonsCache{}
+
+func setConnectionMetrics(conn *v1alpha1.DBaaSConnection, provider string) {
+	for _, cond := range conn.Status.Conditions {
+		if cond.Type == ConnectionReadyType {
+			setMetricsCondConnectionStatus(conn, &cond, provider)
+		} else {
+			// to be implemented for DBaaS Provider specific status condition
+		}
+	}
+}
+
+func setMetricsCondConnectionStatus(conn *v1alpha1.DBaaSConnection, cond *metav1.Condition, provider string) {
+	if cond.Status == metav1.ConditionTrue {
+		setConnectionElapsedTime(conn, cond.LastTransitionTime, provider)
+		setConnectionStatusReady(conn, 1, provider)
+	} else {
+		resetConnectionElapsedTime(conn, provider)
+		setConnectionStatusReady(conn, 0, provider)
+	}
+	setConnectionStatusReason(conn, cond.Reason, provider)
+}
+
+func setConnectionElapsedTime(conn *v1alpha1.DBaaSConnection, lastTransitionTime metav1.Time, provider string) {
+	metrics.ConnectionElapsedTime.With(prometheus.Labels{
+		"provider":   provider,
+		"connection": conn.Name,
+		"namespace":  conn.Namespace}).Set(lastTransitionTime.Sub(conn.CreationTimestamp.Time).Seconds())
+}
+
+func resetConnectionElapsedTime(conn *v1alpha1.DBaaSConnection, provider string) {
+	metrics.ConnectionElapsedTime.Delete(prometheus.Labels{
+		"provider":   provider,
+		"connection": conn.Name,
+		"namespace":  conn.Namespace})
+}
+
+func setConnectionStatusReady(Connection *v1alpha1.DBaaSConnection, val float64, provider string) {
+	metrics.ConnectionStatusReady.With(prometheus.Labels{
+		"provider":   provider,
+		"connection": Connection.Name,
+		"namespace":  Connection.Namespace}).Set(val)
+}
+
+func resetConnectionStatusReasons(conn *v1alpha1.DBaaSConnection, provider string) {
+	for reason := range *connectionReasonCache.GetProviderReasons(provider) {
+		metrics.ConnectionStatusReason.With(prometheus.Labels{
+			"provider":   provider,
+			"connection": conn.Name,
+			"namespace":  conn.Namespace,
+			"reason":     string(reason)}).Set(0)
+	}
+}
+
+func setConnectionStatusReason(conn *v1alpha1.DBaaSConnection, reason, provider string) {
+	connectionReasonCache.SetProviderReason(provider, reason)
+	resetConnectionStatusReasons(conn, provider)
+	metrics.ConnectionStatusReason.With(prometheus.Labels{
+		"provider":   provider,
+		"connection": conn.Name,
+		"namespace":  conn.Namespace,
+		"reason":     reason}).Set(1)
 }
