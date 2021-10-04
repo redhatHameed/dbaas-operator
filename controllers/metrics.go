@@ -14,8 +14,8 @@ const (
 var (
 	PlatformStatus = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: "dbaas_platform_status.",
-			Help: "Status of an installation of components and provider operators",
+			Name: "dbaas_platform_status",
+			Help: "status of an installation of components and provider operators",
 		},
 		[]string{
 			"platform",
