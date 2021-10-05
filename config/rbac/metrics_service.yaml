@@ -6,9 +6,11 @@ metadata:
   name: controller-manager-metrics-service
   namespace: system
 spec:
+  selector:
+    type: dbaas-operator
   ports:
-  - name: https
-    port: 8443
-    targetPort: https
+  - name: http
+    port: 8080
+    targetPort: http
   selector:
     control-plane: controller-manager
