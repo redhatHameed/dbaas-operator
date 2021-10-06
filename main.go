@@ -19,7 +19,6 @@ package main
 import (
 	"flag"
 	"os"
-	customMetrics "sigs.k8s.io/controller-runtime/pkg/metrics"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -49,8 +48,6 @@ var (
 func init() {
 
 	// Register custom metrics with the global prometheus registry
-	//	customMetrics.Registry.MustRegister(controllers.PlatformStatus)
-	//	customMetrics.Registry.MustRegister(controllers.DBaasRequestHistogram)
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))
 	utilruntime.Must(operatorframwork.AddToScheme(scheme))

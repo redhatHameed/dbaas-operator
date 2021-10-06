@@ -95,7 +95,7 @@ func (r *DBaaSConnectionReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 	logger.Info("Found DBaaS Provider", "DBaaS Provider", inventory.Spec.ProviderRef)
 
-	execution := NewExecution(provider.Spec.Provider.Name, connection.Kind, connection.Name, "get_connection")
+	execution := metrics.NewExecution(provider.Spec.Provider.Name, connection.Kind, connection.Name, "get_connection")
 	providerName := provider.Spec.Provider.Name
 
 	providerConnection := r.createProviderObject(&connection, provider.Spec.ConnectionKind)
