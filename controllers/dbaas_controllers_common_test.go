@@ -47,6 +47,7 @@ const (
 	testProviderName   = "mongodb-atlas"
 	testInventoryKind  = "MongoDBAtlasInventory"
 	testConnectionKind = "MongoDBAtlasConnection"
+	testInstanceKind   = "MongoDBAtlasInstance"
 )
 
 var defaultProvider = &v1alpha1.DBaaSProvider{
@@ -57,9 +58,13 @@ var defaultProvider = &v1alpha1.DBaaSProvider{
 		Provider: v1alpha1.DatabaseProvider{
 			Name: testProviderName,
 		},
-		InventoryKind:    testInventoryKind,
-		ConnectionKind:   testConnectionKind,
-		CredentialFields: []v1alpha1.CredentialField{},
+		InventoryKind:           testInventoryKind,
+		ConnectionKind:          testConnectionKind,
+		InstanceKind:            testInstanceKind,
+		CredentialFields:        []v1alpha1.CredentialField{},
+		AllowsFreeTrial:         false,
+		InstanceParameterSpecs:  []v1alpha1.InstanceParameterSpec{},
+		InstanceParameterValues: []v1alpha1.InstanceParameterValue{},
 	},
 }
 

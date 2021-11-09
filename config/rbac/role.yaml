@@ -89,6 +89,32 @@ rules:
 - apiGroups:
   - dbaas.redhat.com
   resources:
+  - dbaasinstances
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dbaas.redhat.com
+  resources:
+  - dbaasinstances/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - dbaas.redhat.com
+  resources:
+  - dbaasinstances/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - dbaas.redhat.com
+  resources:
   - dbaasplatforms
   verbs:
   - create

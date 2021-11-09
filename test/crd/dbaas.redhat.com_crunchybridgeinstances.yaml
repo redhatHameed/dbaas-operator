@@ -1,0 +1,106 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: crunchybridgeinstances.dbaas.redhat.com
+spec:
+  group: dbaas.redhat.com
+  names:
+    kind: CrunchyBridgeInstance
+    listKind: CrunchyBridgeInstanceList
+    plural: crunchybridgeinstances
+    singular: crunchybridgeinstance
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          properties:
+            apiVersion:
+              type: string
+            kind:
+              type: string
+            metadata:
+              type: object
+            spec:
+              properties:
+                inventoryRef:
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  type: object
+                parametersRef:
+                  properties:
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                  type: object
+              required:
+                - inventoryRef
+                - parametersRef
+              type: object
+            status:
+              properties:
+                conditions:
+                  items:
+                    properties:
+                      lastTransitionTime:
+                        format: date-time
+                        type: string
+                      message:
+                        maxLength: 32768
+                        type: string
+                      observedGeneration:
+                        format: int64
+                        minimum: 0
+                        type: integer
+                      reason:
+                        maxLength: 1024
+                        minLength: 1
+                        pattern: ^[A-Za-z]([A-Za-z0-9_,:]*[A-Za-z0-9_])?$
+                        type: string
+                      status:
+                        enum:
+                          - "True"
+                          - "False"
+                          - Unknown
+                        type: string
+                      type:
+                        maxLength: 316
+                        pattern: ^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])$
+                        type: string
+                    required:
+                      - lastTransitionTime
+                      - message
+                      - reason
+                      - status
+                      - type
+                    type: object
+                  type: array
+                instanceID:
+                  type: string
+                instanceInfo:
+                  additionalProperties:
+                    type: string
+                  type: object
+                name:
+                  type: string
+                phase:
+                  type: string
+              required:
+                - instanceID
+                - phase
+              type: object
+          type: object
+      served: true
+      storage: true
+      subresources:
+        status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

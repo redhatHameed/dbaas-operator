@@ -66,9 +66,13 @@ var _ = Describe("Get DBaaSProvider", func() {
 			Provider: v1alpha1.DatabaseProvider{
 				Name: "test-provider",
 			},
-			InventoryKind:    "testInventoryKind",
-			ConnectionKind:   "testConnectionKind",
-			CredentialFields: []v1alpha1.CredentialField{},
+			InventoryKind:           "testInventoryKind",
+			ConnectionKind:          "testConnectionKind",
+			InstanceKind:            "testInstanceKind",
+			CredentialFields:        []v1alpha1.CredentialField{},
+			AllowsFreeTrial:         false,
+			InstanceParameterSpecs:  []v1alpha1.InstanceParameterSpec{},
+			InstanceParameterValues: []v1alpha1.InstanceParameterValue{},
 		},
 	}
 	BeforeEach(assertResourceCreation(provider))
@@ -185,10 +189,10 @@ var _ = Describe("Reconcile provider Object", func() {
 				"namespace": "updated-test-namespace",
 			},
 		}
-		r, err := dRec.reconcileProviderObject(inventory, func() error {
+		r, err := controllerutil.CreateOrUpdate(ctx, dRec.Client, inventory, func() error {
 			inventory.UnstructuredContent()["spec"] = spec
 			return nil
-		}, ctx)
+		})
 		Expect(err).NotTo(HaveOccurred())
 		Expect(r).Should(Equal(controllerutil.OperationResultUpdated))
 

@@ -49,51 +49,6 @@ var _ = Describe("DBaaSConnection controller with errors", func() {
 		AfterEach(assertResourceDeletion(createdDBaaSConnection))
 		It("reconcile with error", assertDBaaSResourceStatusUpdated(createdDBaaSConnection, metav1.ConditionFalse, v1alpha1.DBaaSInventoryNotFound))
 	})
-	Context("after creating DBaaSConnection without valid provider for the inventory", func() {
-		connectionName := "test-connection-no-provider"
-		instanceID := "test-instanceID"
-		inventoryName := "test-connection-no-provider-in-inventory"
-		credentialsRefName := "test-credentials-ref"
-		providerName := "provider-no-exist"
-		DBaaSInventorySpec := &v1alpha1.DBaaSInventorySpec{
-			CredentialsRef: &v1alpha1.NamespacedName{
-				Name:      credentialsRefName,
-				Namespace: testNamespace,
-			},
-		}
-		createdDBaaSInventory := &v1alpha1.DBaaSInventory{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      inventoryName,
-				Namespace: testNamespace,
-			},
-			Spec: v1alpha1.DBaaSOperatorInventorySpec{
-				ProviderRef: v1alpha1.NamespacedName{
-					Name: providerName,
-				},
-				DBaaSInventorySpec: *DBaaSInventorySpec,
-			},
-		}
-		DBaaSConnectionSpec := &v1alpha1.DBaaSConnectionSpec{
-			InventoryRef: v1alpha1.NamespacedName{
-				Name:      inventoryName,
-				Namespace: testNamespace,
-			},
-			InstanceID: instanceID,
-		}
-		createdDBaaSConnection := &v1alpha1.DBaaSConnection{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      connectionName,
-				Namespace: testNamespace,
-			},
-			Spec: *DBaaSConnectionSpec,
-		}
-		BeforeEach(assertResourceCreationIfNotExists(&defaultTenant))
-		BeforeEach(assertResourceCreationIfNotExists(createdDBaaSInventory))
-		BeforeEach(assertResourceCreationIfNotExists(createdDBaaSConnection))
-		AfterEach(assertResourceDeletion(createdDBaaSConnection))
-		AfterEach(assertResourceDeletion(createdDBaaSInventory))
-		It("reconcile with error", assertDBaaSResourceStatusUpdated(createdDBaaSConnection, metav1.ConditionFalse, v1alpha1.DBaaSProviderNotFound))
-	})
 	Context("after creating DBaaSConnection with inventory that is not ready", func() {
 		connectionName := "test-connection-not-ready"
 		instanceID := "test-instanceID"

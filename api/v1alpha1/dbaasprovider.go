@@ -25,8 +25,10 @@ const (
 	// DBaaS condition types
 	DBaaSInventoryReadyType         string = "InventoryReady"
 	DBaaSInventoryProviderSyncType  string = "SpecSynced"
-	DBaaSConnectionProviderSyncType string = "ReadyForBinding"
 	DBaaSConnectionReadyType        string = "ConnectionReady"
+	DBaaSConnectionProviderSyncType string = "ReadyForBinding"
+	DBaaSInstanceReadyType          string = "InstanceReady"
+	DBaaSInstanceProviderSyncType   string = "SpecSynced"
 
 	// DBaaS condition reasons
 	Ready                       string = "Ready"
@@ -39,7 +41,6 @@ const (
 
 	// DBaaS condition messages
 	MsgProviderCRStatusSyncDone      string = "Provider Custom Resource status sync completed"
-	MsgProviderCRCreatedOrUpdated    string = "DBaaS Provider Custom Resource created or updated"
 	MsgProviderCRReconcileInProgress string = "DBaaS Provider Custom Resource reconciliation in progress"
 	MsgInventoryNotReady             string = "Inventory discovery not done"
 	MsgTenantNotFound                string = "Failed to find DBaaS tenants"
@@ -56,8 +57,20 @@ type DBaaSProviderSpec struct {
 	// ConnectionKind is the name of the connection resource (CRD) defined by the provider
 	ConnectionKind string `json:"connectionKind"`
 
+	// InstanceKind is the name of the instance resource (CRD) defined by the provider
+	InstanceKind string `json:"instanceKind"`
+
 	// CredentialFields indicates what information to collect from UX & how to display fields in a form
 	CredentialFields []CredentialField `json:"credentialFields"`
+
+	// AllowsFreeTrial indicates whether the provider provides free trials
+	AllowsFreeTrial bool `json:"allowsFreeTrial"`
+
+	// InstanceParameterSpecs indicates what parameters to collect from UX & how to display fields in a form in order to provision an instance
+	InstanceParameterSpecs []InstanceParameterSpec `json:"instanceParameterSpecs"`
+
+	// InstanceParameterValues indicates what parameter values are displayed in UX for users to select
+	InstanceParameterValues []InstanceParameterValue `json:"instanceParameterValues"`
 }
 
 type DatabaseProvider struct {
@@ -167,4 +180,75 @@ type DBaaSProviderInventory struct {
 
 	Spec   DBaaSInventorySpec   `json:"spec,omitempty"`
 	Status DBaaSInventoryStatus `json:"status,omitempty"`
+}
+
+// DBaaSInstanceSpec defines the desired state of DBaaSInstance
+type DBaaSInstanceSpec struct {
+	// A reference to the relevant DBaaSInventory CR
+	InventoryRef NamespacedName `json:"inventoryRef"`
+
+	// A configmap containing all parameters needed to provision a cluster
+	ParametersRef *NamespacedName `json:"parametersRef"`
+}
+
+// DBaaSInstanceStatus defines the observed state of DBaaSInstance
+type DBaaSInstanceStatus struct {
+	Conditions []metav1.Condition `json:"conditions,omitempty"`
+
+	// The ID of the instance,
+	InstanceID string `json:"instanceID"`
+
+	// The name of this instance in the database service
+	Name string `json:"name,omitempty"`
+
+	// Any other provider-specific information related to this instance
+	InstanceInfo map[string]string `json:"instanceInfo,omitempty"`
+
+	// represents the cluster creation phase
+	// pending - creation not yet started
+	// creating - provisioning in progress
+	// ready - cluster provisioning complete
+	Phase string `json:"phase"`
+}
+
+// DBaaSProviderInstance is the schema for unmarshalling provider instance object
+type DBaaSProviderInstance struct {
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec   DBaaSInstanceSpec   `json:"spec,omitempty"`
+	Status DBaaSInstanceStatus `json:"status,omitempty"`
+}
+
+type InstanceParameterSpec struct {
+	// The name for this field
+	Name string `json:"name"`
+
+	// A user-friendly name for this parameter
+	DisplayName string `json:"displayName"`
+
+	// The type of parameter (string, maskedstring, integer, boolean)
+	Type string `json:"type"`
+
+	// If this field is required or not
+	Required bool `json:"required"`
+
+	// Default value for this field
+	DefaultValue string `json:"defaultValue"`
+}
+
+type InstanceParameterValue struct {
+	// Unique ID for the value
+	ID int `json:"id"`
+
+	Name string `json:"name"`
+
+	Value string `json:"value"`
+
+	DisplayValue string `json:"displayValue,omitempty"`
+
+	// Indicate whether this is a default for the same parent value
+	IsDefault bool `json:"isDefault"`
+
+	// Parent parameter value
+	Parent int `json:"parent,omitempty"`
 }

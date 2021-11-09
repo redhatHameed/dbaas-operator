@@ -20,6 +20,16 @@ metadata:
         },
         {
           "apiVersion": "dbaas.redhat.com/v1alpha1",
+          "kind": "DBaaSInstance",
+          "metadata": {
+            "name": "dbaasinstance-sample"
+          },
+          "spec": {
+            "foo": "bar"
+          }
+        },
+        {
+          "apiVersion": "dbaas.redhat.com/v1alpha1",
           "kind": "DBaaSInventory",
           "metadata": {
             "name": "atlas-inventory"
@@ -133,6 +143,11 @@ spec:
       displayName: DBaaSConnection
       kind: DBaaSConnection
       name: dbaasconnections.dbaas.redhat.com
+      version: v1alpha1
+    - description: DBaaSInstance is the Schema for the dbaasinstances API
+      displayName: DBaaSInstance
+      kind: DBaaSInstance
+      name: dbaasinstances.dbaas.redhat.com
       version: v1alpha1
     - description: DBaaSInventory is the Schema for the dbaasinventory API. Inventory
         objects must be created in a valid Tenant namespace.
@@ -304,6 +319,32 @@ spec:
           - dbaas.redhat.com
           resources:
           - '*/status'
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - dbaas.redhat.com
+          resources:
+          - dbaasinstances
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - dbaas.redhat.com
+          resources:
+          - dbaasinstances/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - dbaas.redhat.com
+          resources:
+          - dbaasinstances/status
           verbs:
           - get
           - patch
