@@ -19,10 +19,10 @@ CATALOG_VERSION ?= 0.1
 
 # QUAY_ORG indicates the organization that docker images will be build for & pushed to
 # CHANGE THIS TO YOUR OWN QUAY USERNAME FOR DEV/TESTING/PUSHING
-QUAY_ORG ?= ecosystem-appeng
+QUAY_ORG ?= ahameed
 
 # CATALOG_BASE_IMG defines an existing catalog version to build on & add bundles to
-CATALOG_BASE_IMG ?= quay.io/$(QUAY_ORG)/dbaas-operator-catalog:v$(CATALOG_VERSION)
+# CATALOG_BASE_IMG ?= quay.io/ecosystem-appeng/dbaas-operator-catalog:v0.1
 
 export OPERATOR_CONDITION_NAME=dbaas-operator.v$(VERSION)
 
@@ -129,7 +129,7 @@ build: generate fmt vet ## Build manager binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
-docker-build: test ## Build docker image with the manager.
+docker-build:  ## Build docker image with the manager.
 	docker build -t ${IMG} .
 
 docker-push: ## Push docker image with the manager.

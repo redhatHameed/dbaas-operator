@@ -114,6 +114,9 @@ type DBaaSInventorySpec struct {
 	// DBaaSProvider CR (CredentialFields key). It is recommended to place the Secret in a
 	// namespace with limited accessibility.
 	CredentialsRef *NamespacedName `json:"credentialsRef"`
+
+	// RequestTimestamp is the time for inventory status to be refreshed.
+	RequestTimestamp metav1.Time `json:"requestTimestamp,omitempty"`
 }
 
 // DBaaSInventoryStatus defines the Inventory status to be used by provider operators
@@ -187,8 +190,17 @@ type DBaaSInstanceSpec struct {
 	// A reference to the relevant DBaaSInventory CR
 	InventoryRef NamespacedName `json:"inventoryRef"`
 
-	// A configmap containing all parameters needed to provision a cluster
-	ParametersRef *NamespacedName `json:"parametersRef"`
+	// The name of this instance in the database service
+	Name string `json:"name,omitempty"`
+
+	// identifies the desired cloud infrastructure provider
+	// +kubebuilder:validation:Enum=aws;gcp;azure
+	Provider string `json:"provider"`
+	// identifies the requested deployment region within the provider (e.g. us-east-1)
+	Region string `json:"region"`
+
+	// Any other provider-specific parameters related to create the instance
+	OtherInstanceParams map[string]string `json:"otherInstanceParams"`
 }
 
 // DBaaSInstanceStatus defines the observed state of DBaaSInstance

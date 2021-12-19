@@ -44,20 +44,31 @@ spec:
                     description: The namespace where object of known type is stored
                     type: string
                 type: object
-              parametersRef:
-                description: A configmap containing all parameters needed to provision
-                  a cluster
-                properties:
-                  name:
-                    description: The name for object of known type
-                    type: string
-                  namespace:
-                    description: The namespace where object of known type is stored
-                    type: string
+              name:
+                description: The name of this instance in the database service
+                type: string
+              otherInstanceParams:
+                additionalProperties:
+                  type: string
+                description: Any other provider-specific parameters related to create
+                  the instance
                 type: object
+              provider:
+                description: identifies the desired cloud infrastructure provider
+                enum:
+                - aws
+                - gcp
+                - azure
+                type: string
+              region:
+                description: identifies the requested deployment region within the
+                  provider (e.g. us-east-1)
+                type: string
             required:
             - inventoryRef
-            - parametersRef
+            - otherInstanceParams
+            - provider
+            - region
             type: object
           status:
             description: DBaaSInstanceStatus defines the observed state of DBaaSInstance
