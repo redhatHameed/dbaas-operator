@@ -171,6 +171,14 @@ catalog-update:
 	-oc delete catalogsource ccapi-k8s-catalogsource -n openshift-marketplace
 	 oc apply -f config/samples/catalog-source.yaml
 
+# Grant permissions to your Prometheus server so that it can scrape the protected metrics.
+# To achieve that, first create ClusterRole and  clusterRoleBinding to bind the clusterRole to the service account that your Prometheus server
+# Set the labels for the namespace that you want to scrape
+metrics-scrape:
+	-oc apply -f config/prometheus/role.yaml
+	-oc apply -f config/prometheus/rolebinding.yaml
+	-oc label namespace openshift-dbaas-operator openshift.io/cluster-monitoring="true"
+
 deploy-sample-app:
 	oc apply -f config/samples/quarkus-runner/deployment.yaml
 
